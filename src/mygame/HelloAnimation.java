@@ -1,33 +1,34 @@
 package mygame;
 
 import com.jme3.anim.AnimComposer;
-import static com.jme3.anim.AnimComposer.DEFAULT_LAYER;
-import com.jme3.anim.tween.Tween;
-import com.jme3.anim.tween.Tweens;
-import com.jme3.anim.tween.action.Action;
-import com.jme3.anim.tween.action.BlendSpace;
-import com.jme3.anim.tween.action.LinearBlendSpace;
 import com.jme3.app.SimpleApplication;
+import com.jme3.bullet.BulletAppState;
+import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
+import com.jme3.bullet.control.CharacterControl;
+import com.jme3.bullet.control.RigidBodyControl;
+import com.jme3.bullet.util.CollisionShapeFactory;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
-import com.jme3.light.AmbientLight;
-import com.jme3.light.DirectionalLight;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.FastMath;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
+import com.jme3.scene.CameraNode;
 import com.jme3.scene.Node;
+import com.jme3.scene.Spatial;
+import com.jme3.scene.control.CameraControl.ControlDirection;
 
-/**
- * Sample 7 - Load an OgreXML model and play some of its animations.
- */
+
 public class HelloAnimation extends SimpleApplication {
 
-    private Action advance;
-    private AnimComposer control;
-    private Node player;
-    private boolean isWalking = false;
+    private PlayerLogic player;
+    final private Vector3f walkDirection = new Vector3f();
+    private boolean rotate = false;
+
 
     public static void main(String[] args) {
         HelloAnimation app = new HelloAnimation();
@@ -37,33 +38,38 @@ public class HelloAnimation extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         viewPort.setBackgroundColor(ColorRGBA.LightGray);
-        initKeys();
+        
+        // Configurar la escena con colisiones
+        Spatial primaryScene = assetManager.loadModel("Scenes/Piso.j3o");
+        rootNode.attachChild(primaryScene);
 
-        /* Agregar una fuente de luz para poder ver el modelo */
-            /** A white ambient light source. */ 
-        AmbientLight ambient = new AmbientLight();
-        ambient.setColor(ColorRGBA.White);
-        rootNode.addLight(ambient); 
-
-        DirectionalLight dl = new DirectionalLight();
-        dl.setDirection(new Vector3f(-0.1f, -1f, -1).normalizeLocal());
-        rootNode.addLight(dl);
-
-        /* Cargar un modelo que contenga animaciones */
-        player = (Node) assetManager.loadModel("Models/Oto/Oto.mesh.xml");
-        player.setLocalScale(0.5f);
-        rootNode.attachChild(player);
+        // Cargar el modelo
+        Node playerNode = (Node) assetManager.loadModel("Models/Oto/Oto.mesh.xml");
+        ((Node) rootNode.getChild("PrimaryScene")).attachChild(playerNode);
+        playerNode.setLocalTranslation(0, 4, 0);
 
         /* Utilizar el AnimComposer del modelo para reproducir su animación "stand" */
-        control = player.getControl(AnimComposer.class);
+        AnimComposer control = playerNode.getControl(AnimComposer.class);
         // Crear una máscara de animación vacía
         control.setCurrentAction("stand");
-
-        /* Componer una acción de animación llamada "halt"
-           que transicione de "Walk" a "stand" en medio segundo. */
-        BlendSpace quickBlend = new LinearBlendSpace(0f, 0.5f);
-        Action halt = control.actionBlended("halt", quickBlend, "stand", "Walk");
-        halt.setLength(0.5);
+        inputManager.setCursorVisible(true);
+        
+        // Inicializar la lógica del jugador
+        player = new PlayerLogic(playerNode, control);
+        
+        // Disable the default flyby cam
+        flyCam.setEnabled(false);
+        //create the camera Node
+        CameraNode camNode = new CameraNode("Camera Node", cam);
+        //This mode means that camera copies the movements of the target:
+        camNode.setControlDir(ControlDirection.SpatialToCamera);
+        //Attach the camNode to the target:
+        player.getPlayerNode().attachChild(camNode);
+        //Move camNode, e.g. behind and above the target:
+        camNode.setLocalTranslation(new Vector3f(0, 6, -20));
+        //Rotate the camNode to look at the target:
+        camNode.lookAt(player.getPlayerNode().getLocalTranslation(), Vector3f.UNIT_Y);
+        initKeys();
     }
   
     /**
@@ -71,16 +77,7 @@ public class HelloAnimation extends SimpleApplication {
      */
     @Override
     public void simpleUpdate(float tpf) {
-        // Actualizar la posición y rotación de la cámara para seguir al jugador
-        Vector3f camDir = player.getLocalRotation().mult(Vector3f.UNIT_Z);
-        Vector3f camLeft = player.getLocalRotation().mult(Vector3f.UNIT_X);
-        camDir.y = 0; // ensure no vertical movement
-        camLeft.y = 0; // ensure no vertical movement
-        camDir.normalizeLocal();
-        camLeft.normalizeLocal();
-        Vector3f camOffset = camDir.mult(-5).add(new Vector3f(0, 7, -9)); // adjust offset
-        cam.setLocation(player.getWorldTranslation().add(camOffset));
-        cam.lookAt(player.getWorldTranslation(), Vector3f.UNIT_Y);
+        
     }
 
   /**
@@ -90,31 +87,55 @@ public class HelloAnimation extends SimpleApplication {
    */
     private void initKeys() {
         inputManager.addMapping("Walk", new KeyTrigger(KeyInput.KEY_W));
+        inputManager.addMapping("WalkLeft", new KeyTrigger(KeyInput.KEY_A));
+        inputManager.addMapping("WalkRight", new KeyTrigger(KeyInput.KEY_D));
+        inputManager.addMapping("WalkBackward", new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping("pull", new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
-
-
-        ActionListener handler = new ActionListener() {
-          @Override
-          public void onAction(String name, boolean keyPressed, float tpf) {
+        
+        AnalogListener handlerAnalog = new AnalogListener(){
+            @Override
+            public void onAnalog(String name, float value, float tpf) {
+                Vector3f camDirection = cam.getDirection().multLocal(1, 0, 1).normalizeLocal();
+                Vector3f camLeft = cam.getLeft().multLocal(1, 0, 1).normalizeLocal();
                 if (name.equals("Walk")) {
-                    if (keyPressed && !isWalking) {
-                        // Comenzar la animación de caminar solo si no está actualmente caminando
-                        control.setCurrentAction("Walk", DEFAULT_LAYER, true);
-                        isWalking = true;
-                    } else if (!keyPressed && isWalking) {
-                        // Detener la animación de caminar cuando se suelta la tecla 'W'
-                        control.setCurrentAction("stand");
-                        isWalking = false;
-                    }
-                }else if (name.equals("pull")) {
-                    if (keyPressed) {
-                        // Comenzar la animación de caminar solo si no está actualmente caminando
-                        control.setCurrentAction("pull", DEFAULT_LAYER, false);
-                    }
+                    player.getPlayerNode().move(camDirection.mult(5 * tpf));
+                }
+                if (name.equals("WalkBackward")) {
+                    //Quaternion rotation = new Quaternion().fromAngleAxis(FastMath.PI, Vector3f.UNIT_Y);
+                    //playerLogic.getPlayerNode().rotate(rotation);
+                    player.getPlayerNode().move(camDirection.negate().mult(5 * tpf));
+                }
+                if (name.equals("WalkRight")) {
+                    player.getPlayerNode().move(camLeft.mult(-5 * tpf));
+                }
+                if (name.equals("WalkLeft")) {
+                    player.getPlayerNode().move(camLeft.mult(5 * tpf));
                 }
             }
         };
-        inputManager.addListener(handler, "Walk");
-        inputManager.addListener(handler, "pull");
+
+        ActionListener handler = new ActionListener() {
+            @Override
+            public void onAction(String name, boolean keyPressed, float tpf) {
+                if(name.equals("Walk")){
+                    player.handleWalkAction(keyPressed);
+                }
+                if(name.equals("WalkLeft")){
+                    player.handleWalkAction(keyPressed);
+                }
+                if(name.equals("WalkRight")){
+                    player.handleWalkAction(keyPressed);
+                }
+                if(name.equals("WalkBackward")){
+                    player.handleWalkAction(keyPressed);
+                }
+                if(name.equals("pull")){
+                    player.handlePullAction(keyPressed);
+                }
+            }
+        };
+        
+        inputManager.addListener(handlerAnalog, "Walk", "WalkLeft", "WalkRight", "WalkBackward", "pull");
+        inputManager.addListener(handler, "Walk", "WalkLeft", "WalkRight", "WalkBackward", "pull");
     }
 }
