@@ -14,6 +14,7 @@ import com.jme3.scene.CameraNode;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.control.CameraControl.ControlDirection;
+import com.jme3.system.AppSettings;
 
 
 public class Juego extends SimpleApplication {
@@ -22,7 +23,15 @@ public class Juego extends SimpleApplication {
 
 
     public static void main(String[] args) {
+        AppSettings settings = new AppSettings(true); //Creamos el objeto para controlar las especificaciones
+        settings.setTitle("El Despertar del Héroe"); //Cambiamos el nombre de la ventana 
+        //Integramos una imagen personal a la pantalla de inicio
+        settings.setSettingsDialogImage("Logos/Portada.png");
+        //modificar la resolucion 
+        //settings.setResolution(1280, 960);
         Juego app = new Juego();
+        
+        app.setSettings(settings);//Aplicamos las especificaciones a la app
         app.start();
     }
 
