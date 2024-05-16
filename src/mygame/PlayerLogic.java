@@ -28,17 +28,35 @@ public class PlayerLogic {
     public void handleWalkAction(boolean keyPressed) {
         if (keyPressed) {
             animComposer.setCurrentAction("Walk", AnimComposer.DEFAULT_LAYER, true);
-            isWalking = true;
         } else {
+            /*if(isWalking){
+                animComposer.setCurrentAction("Walk", AnimComposer.DEFAULT_LAYER, true);
+            }else{
+                animComposer.setCurrentAction("stand");
+            }*/
             animComposer.setCurrentAction("stand");
-            isWalking = false;
         }
     }
     
     public void handlePullAction(boolean keyPressed) {
-        if (keyPressed) {
+        if(keyPressed){
             animComposer.setCurrentAction("pull", DEFAULT_LAYER, false);
-        
+        }
+    }
+    
+    void handleWalkAndPullAction(boolean keyPressed) {
+        if (keyPressed) {
+            animComposer.setCurrentAction("Walk", AnimComposer.DEFAULT_LAYER, true);
+            animComposer.setCurrentAction("pull", DEFAULT_LAYER, false);
+        }else {
+            // Si ninguna tecla está presionada, dejar que las animaciones continúen
+            // reproduciéndose si ya estaban activadas
+            if (animComposer.getCurrentAction("Walk").getLength() != 0) {
+                animComposer.setCurrentAction("Walk", AnimComposer.DEFAULT_LAYER, true);
+            }
+            if (animComposer.getCurrentAction("pull").getLength() != 0) {
+                animComposer.setCurrentAction("pull", DEFAULT_LAYER, true);
+            }
         }
     }
 
@@ -53,4 +71,10 @@ public class PlayerLogic {
     public float getMoveSpeed() {
         return moveSpeed;
     }
+
+    public void setIsWalking(boolean isWalking) {
+        this.isWalking = isWalking;
+    }
+    
+    
 }

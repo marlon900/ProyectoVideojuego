@@ -1,0 +1,8 @@
+Material My Material :  {
+     MaterialParameters {
+     }
+    AdditionalRenderState {
+      Blend Color
+      Wireframe Off
+    }
+}
