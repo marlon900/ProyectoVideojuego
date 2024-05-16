@@ -40,7 +40,7 @@ public class HelloAnimation extends SimpleApplication {
         viewPort.setBackgroundColor(ColorRGBA.LightGray);
         
         // Configurar la escena con colisiones
-        Spatial primaryScene = assetManager.loadModel("Scenes/Piso.j3o");
+        Spatial primaryScene = assetManager.loadModel("Scenes/terreno.j3o");
         rootNode.attachChild(primaryScene);
 
         // Cargar el modelo
