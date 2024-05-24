@@ -60,7 +60,7 @@ public class Juego extends SimpleApplication {
         inputManager.setCursorVisible(true);
         
         // Inicializar la lógica del jugador
-        player = new PlayerLogic(playerNode, control);
+        player = new PlayerLogic(playerNode, control, 100);
         
         // Disable the default flyby cam
         flyCam.setEnabled(false);
@@ -116,7 +116,8 @@ public class Juego extends SimpleApplication {
                 animComposer.setCurrentAction("RunBase");
 
                 // Inicializar la lógica del enemigo
-                EnemyLogic enemy = new EnemyLogic(enemyNode, animComposer, player.getPlayerNode().getLocalTranslation());
+                EnemyLogic enemy = new EnemyLogic(enemyNode, animComposer, 
+                        player.getPlayerNode().getLocalTranslation(), 10);
                 enemies.add(enemy);
             }
         }

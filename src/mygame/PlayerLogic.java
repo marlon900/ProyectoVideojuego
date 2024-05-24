@@ -19,10 +19,12 @@ public class PlayerLogic {
     private AnimComposer animComposer;
     private boolean isWalking = false;
     private float moveSpeed = 0.2f;
+    private int vida;
 
-    public PlayerLogic(Node playerNode, AnimComposer animComposer) {
+    public PlayerLogic(Node playerNode, AnimComposer animComposer, int vida) {
         this.playerNode = playerNode;
         this.animComposer = animComposer;
+        this.vida = vida;
     }
 
     public void handleWalkAction(boolean keyPressed) {
@@ -69,6 +71,14 @@ public class PlayerLogic {
 
     public void setIsWalking(boolean isWalking) {
         this.isWalking = isWalking;
+    }
+
+    public int getVida() {
+        return vida;
+    }
+
+    public void setVida(int vida) {
+        this.vida = vida;
     }
     
     
