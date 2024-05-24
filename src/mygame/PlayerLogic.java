@@ -29,11 +29,6 @@ public class PlayerLogic {
         if (keyPressed) {
             animComposer.setCurrentAction("Walk", AnimComposer.DEFAULT_LAYER, true);
         } else {
-            /*if(isWalking){
-                animComposer.setCurrentAction("Walk", AnimComposer.DEFAULT_LAYER, true);
-            }else{
-                animComposer.setCurrentAction("stand");
-            }*/
             animComposer.setCurrentAction("stand");
         }
     }

@@ -1,8 +1,20 @@
-Material My Material :  {
+Material My Material : Common/MatDefs/Light/Lighting.j3md {
      MaterialParameters {
+        Diffuse : 0.0 0.8 0.0 0.79
+        Shininess :  1
+        ParallaxHeight :  0.05
+        BackfaceShadows : false
+        UseVertexColor : false
+        UseInstancing : false
+        SteepParallax : false
+        PackedNormalParallax : false
+        EnvMapAsSphereMap : false
+        SeparateTexCoord : false
+        HardwareShadows : false
+        UseFog : false
+        UseMaterialColors : true
+        VertexLighting : true
      }
     AdditionalRenderState {
-      Blend Color
-      Wireframe Off
     }
 }
