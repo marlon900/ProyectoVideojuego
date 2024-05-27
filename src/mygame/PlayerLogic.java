@@ -6,8 +6,6 @@ package mygame;
 
 import com.jme3.anim.AnimComposer;
 import static com.jme3.anim.AnimComposer.DEFAULT_LAYER;
-import com.jme3.bullet.control.CharacterControl;
-import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
 
 /**
@@ -18,13 +16,12 @@ public class PlayerLogic {
     private Node playerNode;
     private AnimComposer animComposer;
     private boolean isWalking = false;
-    private float moveSpeed = 0.2f;
-    private int vida;
+    private int health;
 
-    public PlayerLogic(Node playerNode, AnimComposer animComposer, int vida) {
+    public PlayerLogic(Node playerNode, AnimComposer animComposer, int health) {
         this.playerNode = playerNode;
         this.animComposer = animComposer;
-        this.vida = vida;
+        this.health = health;
     }
 
     public void handleWalkAction(boolean keyPressed) {
@@ -40,22 +37,6 @@ public class PlayerLogic {
             animComposer.setCurrentAction("pull", DEFAULT_LAYER, false);
         }
     }
-    
-    void handleWalkAndPullAction(boolean keyPressed) {
-        if (keyPressed) {
-            animComposer.setCurrentAction("Walk", AnimComposer.DEFAULT_LAYER, true);
-            animComposer.setCurrentAction("pull", DEFAULT_LAYER, false);
-        }else {
-            // Si ninguna tecla está presionada, dejar que las animaciones continúen
-            // reproduciéndose si ya estaban activadas
-            if (animComposer.getCurrentAction("Walk").getLength() != 0) {
-                animComposer.setCurrentAction("Walk", AnimComposer.DEFAULT_LAYER, true);
-            }
-            if (animComposer.getCurrentAction("pull").getLength() != 0) {
-                animComposer.setCurrentAction("pull", DEFAULT_LAYER, true);
-            }
-        }
-    }
 
     public Node getPlayerNode() {
         return playerNode;
@@ -65,21 +46,15 @@ public class PlayerLogic {
         return isWalking;
     }
 
-    public float getMoveSpeed() {
-        return moveSpeed;
-    }
-
     public void setIsWalking(boolean isWalking) {
         this.isWalking = isWalking;
     }
 
-    public int getVida() {
-        return vida;
+    public int getHealth() {
+        return health;
     }
 
-    public void setVida(int vida) {
-        this.vida = vida;
+    public void setHealth(int health) {
+        this.health = health;
     }
-    
-    
 }

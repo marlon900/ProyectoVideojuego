@@ -1,0 +1,22 @@
+Material MyMaterial : Common/MatDefs/Light/Lighting.j3md {
+    MaterialParameters {
+        Diffuse : 0.4 0.4 0.4 1.0
+        UseMaterialColors : true
+        ParallaxHeight : 0.05
+        Ambient : 0.4 0.4 0.4 1.0
+        BackfaceShadows : false
+        Specular : 0.4 0.4 0.4 1.0
+        Shininess : 1.0
+        FogColor : 0.4 0.4 0.4 1.0
+        GlowColor : 0.4 0.4 0.4 1.0
+        UseVertexColor : false
+        VertexLighting : true
+    }
+    AdditionalRenderState {
+      DepthWrite On
+      ColorWrite On
+      DepthTest Off
+      Wireframe Off
+      FaceCull Back
+    }
+}

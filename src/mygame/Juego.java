@@ -1,7 +1,10 @@
 package mygame;
 
 import com.jme3.anim.AnimComposer;
+import com.jme3.anim.Joint;
+import com.jme3.anim.SkinningControl;
 import com.jme3.app.SimpleApplication;
+import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
@@ -9,12 +12,16 @@ import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.light.AmbientLight;
+import com.jme3.light.PointLight;
+import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.CameraNode;
+import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.control.CameraControl.ControlDirection;
+import com.jme3.scene.shape.Sphere;
 import com.jme3.system.AppSettings;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +31,10 @@ public class Juego extends SimpleApplication {
 
     private PlayerLogic player;
     private List<EnemyLogic> enemies = new ArrayList<>();
+    private float gameTime;
+    private BitmapText timeText;
+    private float enemySpawnTime = 0;
+    private float enemySpawnInterval = 30;
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true); //Creamos el objeto para controlar las especificaciones
@@ -31,7 +42,7 @@ public class Juego extends SimpleApplication {
         //Integramos una imagen personal a la pantalla de inicio
         settings.setSettingsDialogImage("Logos/Portada.png");
         //modificar la resolucion 
-        settings.setResolution(1280, 960);
+        settings.setResolution(800, 600);
         Juego app = new Juego();
         
         app.setSettings(settings);//Aplicamos las especificaciones a la app
@@ -41,6 +52,9 @@ public class Juego extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         
+        setDisplayStatView(false);
+        setDisplayFps(false);
+        
         // Configurar la escena con colisiones
         Spatial primaryScene = assetManager.loadModel("Scenes/terreno.j3o");
         primaryScene.setLocalTranslation(0, -5, 0);
@@ -48,9 +62,38 @@ public class Juego extends SimpleApplication {
 
         // Cargar el modelo
         Node playerNode = (Node) assetManager.loadModel("Models/Oto/Oto.mesh.xml");
-        AmbientLight ambient = new AmbientLight();
-        ambient.setColor(ColorRGBA.White);
-        playerNode.addLight(ambient); 
+        
+        // Crear y configurar las luces
+        Node frontNode = new Node("frontNode");
+        PointLight frontLight = new PointLight();
+        frontLight.setColor(ColorRGBA.White);
+        frontLight.setRadius(10f); // Puedes ajustar el radio según sea necesario
+
+        Node backNode = new Node("backNode");
+        PointLight backLight = new PointLight();
+        backLight.setColor(ColorRGBA.White);
+        backLight.setRadius(10f); // Puedes ajustar el radio según sea necesario
+
+        // Agregar las luces al nodo del jugador
+        playerNode.addLight(frontLight);
+        playerNode.addLight(backLight);
+        
+        // Obtener el SkinningControl
+        SkinningControl skinningControl = playerNode.getControl(SkinningControl.class);
+
+        // Cargar el modelo del arma
+        Node weaponNode = (Node) assetManager.loadModel("Models/shotgun/shotgun.j3o");
+
+        // Encontrar el hueso de la mano derecha
+        Joint rightHand = skinningControl.getArmature().getJoint("hand.right");
+
+        // Adjuntar el arma al AttachmentNode del hueso de la mano derecha
+        skinningControl.getAttachmentsNode(rightHand.getName()).attachChild(weaponNode);
+
+        // Ajustar la posición y rotación del arma
+        //weaponNode.setLocalRotation(new Quaternion().fromAngleAxis(FastMath.PI, Vector3f.UNIT_X)); // Ajusta según sea necesario
+        
+        
         rootNode.attachChild(playerNode);
 
         /* Utilizar el AnimComposer del modelo para reproducir su animación "stand" */
@@ -75,8 +118,13 @@ public class Juego extends SimpleApplication {
         //Rotate the camNode to look at the target:
         camNode.lookAt(player.getPlayerNode().getLocalTranslation(), Vector3f.UNIT_Y);
         
+        gameTime = 0;
+
+        // Configurar el texto para mostrar el tiempo
+        initTimeDisplay();
+        
         initKeys();
-        initEnemies();
+        spawnEnemies();
     }
   
     /**
@@ -84,14 +132,49 @@ public class Juego extends SimpleApplication {
      */
     @Override
     public void simpleUpdate(float tpf) {
+        // Actualizar el tiempo de la partida
+        gameTime += tpf;
+        // Actualizar el texto en pantalla
+        timeText.setText(String.format("Time: %.1f", gameTime));
+        
+        enemySpawnTime += tpf;
+        if (enemySpawnTime >= enemySpawnInterval) {
+            spawnEnemies();
+            enemySpawnTime = 0; // Reiniciar el contador
+        }
+        
         for (EnemyLogic enemy : enemies) {
             // Cálculo de la dirección hacia el jugador
             Vector3f playerPosition = player.getPlayerNode().getLocalTranslation();
             enemy.update(4 * tpf, playerPosition);
         }
+        
+        attachLight();
     }
     
-    private void initEnemies() {
+    private void attachLight(){
+        Vector3f playerWorldPosition = player.getPlayerNode().getWorldTranslation();
+
+        // Actualizar la posición relativa de las luces
+        PointLight frontLight = (PointLight) player.getPlayerNode().getLocalLightList().get(0);
+        PointLight backLight = (PointLight) player.getPlayerNode().getLocalLightList().get(1);
+
+        frontLight.setPosition(playerWorldPosition.add(0, 0, 5)); // Ajusta la posición frente al nodo
+        backLight.setPosition(playerWorldPosition.add(0, 0, -5));
+    }
+    
+    private void initTimeDisplay() {
+        guiNode.detachAllChildren();
+        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+        timeText = new BitmapText(guiFont, false);
+        timeText.setSize(guiFont.getCharSet().getRenderedSize());
+        timeText.setColor(ColorRGBA.White);
+        timeText.setText("Time: 0.0");
+        timeText.setLocalTranslation(10, settings.getHeight() - timeText.getLineHeight(), 0);
+        guiNode.attachChild(timeText);
+    }
+    
+    private void spawnEnemies() {
         // Encuentra el nodo "Cuevas" dentro del nodo "terreno"
         Node terrenoNode = (Node) rootNode.getChild("terreno");
         for (Spatial spatial : terrenoNode.getChildren()) {
@@ -134,6 +217,7 @@ public class Juego extends SimpleApplication {
         inputManager.addMapping("WalkRight", new KeyTrigger(KeyInput.KEY_D));
         inputManager.addMapping("WalkBackward", new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping("pull", new MouseButtonTrigger(MouseInput.BUTTON_RIGHT));
+        inputManager.addMapping("shoot", new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
         
         AnalogListener handlerAnalog = new AnalogListener(){
             @Override
@@ -167,10 +251,42 @@ public class Juego extends SimpleApplication {
                     // Manejar la animación de empujar
                     player.handlePullAction(keyPressed);
                 }
+                if (name.equals("shoot")) {
+                    if(keyPressed){
+                        shoot();
+                    }
+                }
             }
         };
         
-        inputManager.addListener(handlerAnalog, "Walk", "WalkLeft", "WalkRight", "WalkBackward", "pull");
-        inputManager.addListener(handler, "Walk", "WalkLeft", "WalkRight", "WalkBackward", "pull");
+        inputManager.addListener(handlerAnalog, "Walk", "WalkLeft", "WalkRight", "WalkBackward", "pull", "shoot");
+        inputManager.addListener(handler, "Walk", "WalkLeft", "WalkRight", "WalkBackward", "pull", "shoot");
+    }
+    
+    public void shoot() {
+        // Obtener la posición y dirección del arma
+        Spatial weapon = player.getPlayerNode().getChild("shotgun");
+        Vector3f weaponPosition = weapon.getWorldTranslation();
+        // Obtener la dirección de la cámara y ajustar la componente Y a 0
+        Vector3f shootDirection = cam.getDirection().clone();
+        shootDirection.y = 0;
+        shootDirection.normalizeLocal();
+
+        // Crear el disparo
+        Geometry bullet = createBullet();
+        bullet.setLocalTranslation(weaponPosition);
+        rootNode.attachChild(bullet);
+
+        // Mover el disparo
+        bullet.addControl(new BulletControl(shootDirection, enemies));
+    }
+
+    private Geometry createBullet() {
+        Sphere bulletMesh = new Sphere(10, 10, 0.1f);
+        Geometry bullet = new Geometry("Bullet", bulletMesh);
+        Material bulletMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        bulletMat.setColor("Color", ColorRGBA.LightGray);
+        bullet.setMaterial(bulletMat);
+        return bullet;
     }
 }

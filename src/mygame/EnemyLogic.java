@@ -16,13 +16,13 @@ public class EnemyLogic {
     private Node enemyNode;
     private AnimComposer animComposer;
     private Vector3f target;
-    private int vida;
+    private int health;
 
-    public EnemyLogic(Node enemyNode, AnimComposer animComposer, Vector3f target, int vida) {
+    public EnemyLogic(Node enemyNode, AnimComposer animComposer, Vector3f target, int health) {
         this.enemyNode = enemyNode;
         this.animComposer = animComposer;
         this.target = target;
-        this.vida = vida;
+        this.health = health;
     }
 
     public Node getEnemyNode() {
@@ -35,12 +35,21 @@ public class EnemyLogic {
         Vector3f direction = target.subtract(enemyNode.getLocalTranslation()).normalize();
         enemyNode.move(direction.mult(tpf)); // Ajusta la velocidad según sea necesario
     }
-
-    public int getVida() {
-        return vida;
+    
+    public void takeDamage(int damage) {
+        health -= damage;
+        if (health <= 0) {
+            // Lógica cuando el enemigo muere
+            animComposer.setCurrentAction("StandUpBack");
+            enemyNode.removeFromParent();
+        }
     }
 
-    public void setVida(int vida) {
-        this.vida = vida;
+    public int getHealth() {
+        return health;
+    }
+
+    public void setHealth(int health) {
+        this.health = health;
     }
 }
