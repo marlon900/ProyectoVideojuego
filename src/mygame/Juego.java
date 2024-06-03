@@ -36,6 +36,7 @@ public class Juego extends SimpleApplication {
     private BitmapText timeText;
     private float enemySpawnTime = 0;
     private float enemySpawnInterval = 30;
+    private int difficulty;
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true); //Creamos el objeto para controlar las especificaciones
@@ -43,7 +44,8 @@ public class Juego extends SimpleApplication {
         //Integramos una imagen personal a la pantalla de inicio
         settings.setSettingsDialogImage("Logos/Portada.png");
         //modificar la resolucion 
-        settings.setResolution(800, 600);
+        settings.setFullscreen(true);
+        settings.setResolution(1024, 720);
         Juego app = new Juego();
         
         app.setSettings(settings);//Aplicamos las especificaciones a la app
@@ -107,8 +109,8 @@ public class Juego extends SimpleApplication {
         player = new PlayerLogic(playerNode, control, 100);
         
         // Disable the default flyby cam
-        //flyCam.setEnabled(false);
-        flyCam.setZoomSpeed(10);
+        flyCam.setEnabled(false);
+        //flyCam.setZoomSpeed(10);
         //create the camera Node
         CameraNode camNode = new CameraNode("Camera Node", cam);
         //This mode means that camera copies the movements of the target:
@@ -126,7 +128,8 @@ public class Juego extends SimpleApplication {
         initTimeDisplay();
         
         initKeys();
-        //spawnEnemies();
+        spawnEnemies();
+        difficulty = 1;
     }
   
     /**
@@ -139,8 +142,9 @@ public class Juego extends SimpleApplication {
         // Actualizar el texto en pantalla
         timeText.setText(String.format("Time: %.1f", gameTime));
         
-        //enemySpawnTime += tpf;
+        enemySpawnTime += tpf;
         if (enemySpawnTime >= enemySpawnInterval) {
+            difficulty += 1;
             spawnEnemies();
             enemySpawnTime = 0; // Reiniciar el contador
         }
@@ -202,7 +206,7 @@ public class Juego extends SimpleApplication {
 
                 // Inicializar la lógica del enemigo
                 EnemyLogic enemy = new EnemyLogic(enemyNode, animComposer, 
-                        player.getPlayerNode().getLocalTranslation(), 10);
+                        player.getPlayerNode().getLocalTranslation(), (10*difficulty));
                 enemies.add(enemy);
             }
         }
