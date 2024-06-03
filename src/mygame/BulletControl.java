@@ -41,8 +41,7 @@ public class BulletControl extends AbstractControl {
                     // Lógica cuando el disparo colisiona con un enemigo
                     System.out.println("Hit!");
                     spatial.removeFromParent();
-                    enemy.takeDamage(5);
-                    break;
+                    enemy.takeDamage(10);
                 }
             }
             

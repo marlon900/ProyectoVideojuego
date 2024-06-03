@@ -16,6 +16,7 @@ import com.jme3.light.PointLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
+import com.jme3.post.FilterPostProcessor;
 import com.jme3.scene.CameraNode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
@@ -59,6 +60,9 @@ public class Juego extends SimpleApplication {
         Spatial primaryScene = assetManager.loadModel("Scenes/terreno.j3o");
         primaryScene.setLocalTranslation(0, -5, 0);
         rootNode.attachChild(primaryScene);
+        
+        /*FilterPostProcessor efectoNeblina = (FilterPostProcessor)assetManager.loadFilter("Materials/fog.j3f");
+        viewPort.addProcessor(efectoNeblina);*/
 
         // Cargar el modelo
         Node playerNode = (Node) assetManager.loadModel("Models/Oto/Oto.mesh.xml");
@@ -67,12 +71,10 @@ public class Juego extends SimpleApplication {
         Node frontNode = new Node("frontNode");
         PointLight frontLight = new PointLight();
         frontLight.setColor(ColorRGBA.White);
-        frontLight.setRadius(10f); // Puedes ajustar el radio según sea necesario
 
         Node backNode = new Node("backNode");
         PointLight backLight = new PointLight();
         backLight.setColor(ColorRGBA.White);
-        backLight.setRadius(10f); // Puedes ajustar el radio según sea necesario
 
         // Agregar las luces al nodo del jugador
         playerNode.addLight(frontLight);
@@ -90,8 +92,7 @@ public class Juego extends SimpleApplication {
         // Adjuntar el arma al AttachmentNode del hueso de la mano derecha
         skinningControl.getAttachmentsNode(rightHand.getName()).attachChild(weaponNode);
 
-        // Ajustar la posición y rotación del arma
-        //weaponNode.setLocalRotation(new Quaternion().fromAngleAxis(FastMath.PI, Vector3f.UNIT_X)); // Ajusta según sea necesario
+        weaponNode.setLocalTranslation(0, 0.5f, 0);
         
         
         rootNode.attachChild(playerNode);
@@ -106,7 +107,8 @@ public class Juego extends SimpleApplication {
         player = new PlayerLogic(playerNode, control, 100);
         
         // Disable the default flyby cam
-        flyCam.setEnabled(false);
+        //flyCam.setEnabled(false);
+        flyCam.setZoomSpeed(10);
         //create the camera Node
         CameraNode camNode = new CameraNode("Camera Node", cam);
         //This mode means that camera copies the movements of the target:
@@ -124,7 +126,7 @@ public class Juego extends SimpleApplication {
         initTimeDisplay();
         
         initKeys();
-        spawnEnemies();
+        //spawnEnemies();
     }
   
     /**
@@ -137,7 +139,7 @@ public class Juego extends SimpleApplication {
         // Actualizar el texto en pantalla
         timeText.setText(String.format("Time: %.1f", gameTime));
         
-        enemySpawnTime += tpf;
+        //enemySpawnTime += tpf;
         if (enemySpawnTime >= enemySpawnInterval) {
             spawnEnemies();
             enemySpawnTime = 0; // Reiniciar el contador
@@ -159,8 +161,8 @@ public class Juego extends SimpleApplication {
         PointLight frontLight = (PointLight) player.getPlayerNode().getLocalLightList().get(0);
         PointLight backLight = (PointLight) player.getPlayerNode().getLocalLightList().get(1);
 
-        frontLight.setPosition(playerWorldPosition.add(0, 0, 5)); // Ajusta la posición frente al nodo
-        backLight.setPosition(playerWorldPosition.add(0, 0, -5));
+        frontLight.setPosition(playerWorldPosition.add(0, 3, 6)); // Ajusta la posición frente al nodo
+        backLight.setPosition(playerWorldPosition.add(0, 4, -6));
     }
     
     private void initTimeDisplay() {
