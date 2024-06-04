@@ -10,6 +10,7 @@ import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.input.controls.MouseAxisTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.light.AmbientLight;
 import com.jme3.light.PointLight;
@@ -21,7 +22,9 @@ import com.jme3.scene.CameraNode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
+import com.jme3.scene.control.CameraControl;
 import com.jme3.scene.control.CameraControl.ControlDirection;
+import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.system.AppSettings;
 import java.util.ArrayList;
@@ -37,6 +40,7 @@ public class Juego extends SimpleApplication {
     private float enemySpawnTime = 0;
     private float enemySpawnInterval = 30;
     private int difficulty;
+    private static final Box mesh = new Box(0.8f, 0.8f, 0.8f);
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true); //Creamos el objeto para controlar las especificaciones
@@ -49,72 +53,65 @@ public class Juego extends SimpleApplication {
         Juego app = new Juego();
         
         app.setSettings(settings);//Aplicamos las especificaciones a la app
-        app.start();
+        
+        app.start();// Iniciamos el juego
     }
 
     @Override
     public void simpleInitApp() {
+        setDisplayStatView(false);//Dejamos de mostrar información
+        setDisplayFps(false);//Quitamos el numero de fps
         
-        setDisplayStatView(false);
-        setDisplayFps(false);
-        
-        // Configurar la escena con colisiones
+        // Cargar el terreno
         Spatial primaryScene = assetManager.loadModel("Scenes/terreno.j3o");
         primaryScene.setLocalTranslation(0, -5, 0);
         rootNode.attachChild(primaryScene);
-        
-        /*FilterPostProcessor efectoNeblina = (FilterPostProcessor)assetManager.loadFilter("Materials/fog.j3f");
-        viewPort.addProcessor(efectoNeblina);*/
 
-        // Cargar el modelo
+        // Cargar el modelo para crear el jugador
         Node playerNode = (Node) assetManager.loadModel("Models/Oto/Oto.mesh.xml");
         
-        // Crear y configurar las luces
-        Node frontNode = new Node("frontNode");
+        // Crear y configurar las luces para iluminar el modelo
         PointLight frontLight = new PointLight();
         frontLight.setColor(ColorRGBA.White);
-
-        Node backNode = new Node("backNode");
         PointLight backLight = new PointLight();
         backLight.setColor(ColorRGBA.White);
-
+        PointLight leftLight = new PointLight();
+        leftLight.setColor(ColorRGBA.White);
+        PointLight rightLight = new PointLight();
+        rightLight.setColor(ColorRGBA.White);
         // Agregar las luces al nodo del jugador
         playerNode.addLight(frontLight);
         playerNode.addLight(backLight);
-        
+        playerNode.addLight(frontLight);
+        playerNode.addLight(backLight);
         // Obtener el SkinningControl
         SkinningControl skinningControl = playerNode.getControl(SkinningControl.class);
-
+        
         // Cargar el modelo del arma
         Node weaponNode = (Node) assetManager.loadModel("Models/shotgun/shotgun.j3o");
-
         // Encontrar el hueso de la mano derecha
         Joint rightHand = skinningControl.getArmature().getJoint("hand.right");
-
         // Adjuntar el arma al AttachmentNode del hueso de la mano derecha
         skinningControl.getAttachmentsNode(rightHand.getName()).attachChild(weaponNode);
-
         weaponNode.setLocalTranslation(0, 0.5f, 0);
         
-        
         rootNode.attachChild(playerNode);
-
         /* Utilizar el AnimComposer del modelo para reproducir su animación "stand" */
         AnimComposer control = playerNode.getControl(AnimComposer.class);
         // Crear una máscara de animación vacía
         control.setCurrentAction("stand");
-        inputManager.setCursorVisible(true);
-        
         // Inicializar la lógica del jugador
         player = new PlayerLogic(playerNode, control, 100);
         
-        // Disable the default flyby cam
+        // Desactivamos la camara voladora
         flyCam.setEnabled(false);
-        //flyCam.setZoomSpeed(10);
+        inputManager.setCursorVisible(false);
+        //inputManager.setCursorVisible(false);
+        
         //create the camera Node
         CameraNode camNode = new CameraNode("Camera Node", cam);
         //This mode means that camera copies the movements of the target:
-        camNode.setControlDir(ControlDirection.SpatialToCamera);
+        camNode.setControlDir(CameraControl.ControlDirection.SpatialToCamera);
         //Attach the camNode to the target:
         player.getPlayerNode().attachChild(camNode);
         //Move camNode, e.g. behind and above the target:
@@ -122,14 +119,12 @@ public class Juego extends SimpleApplication {
         //Rotate the camNode to look at the target:
         camNode.lookAt(player.getPlayerNode().getLocalTranslation(), Vector3f.UNIT_Y);
         
-        gameTime = 0;
-
+        gameTime = 0;//Inciamos el tiempo de juego
         // Configurar el texto para mostrar el tiempo
         initTimeDisplay();
-        
         initKeys();
         spawnEnemies();
-        difficulty = 1;
+        difficulty = 1;//Establecemos la dificultad incial en 1
     }
   
     /**
@@ -156,6 +151,8 @@ public class Juego extends SimpleApplication {
         }
         
         attachLight();
+        
+        inputManager.setCursorVisible(false);
     }
     
     private void attachLight(){
@@ -164,9 +161,13 @@ public class Juego extends SimpleApplication {
         // Actualizar la posición relativa de las luces
         PointLight frontLight = (PointLight) player.getPlayerNode().getLocalLightList().get(0);
         PointLight backLight = (PointLight) player.getPlayerNode().getLocalLightList().get(1);
+        PointLight leftLight = (PointLight) player.getPlayerNode().getLocalLightList().get(2);
+        PointLight rightLight = (PointLight) player.getPlayerNode().getLocalLightList().get(3);
 
         frontLight.setPosition(playerWorldPosition.add(0, 3, 6)); // Ajusta la posición frente al nodo
         backLight.setPosition(playerWorldPosition.add(0, 4, -6));
+        leftLight.setPosition(playerWorldPosition.add(-6, 0, 0)); // Ajusta la posición frente al nodo
+        rightLight.setPosition(playerWorldPosition.add(6, 0, 0));
     }
     
     private void initTimeDisplay() {
@@ -175,7 +176,7 @@ public class Juego extends SimpleApplication {
         timeText = new BitmapText(guiFont, false);
         timeText.setSize(guiFont.getCharSet().getRenderedSize());
         timeText.setColor(ColorRGBA.White);
-        timeText.setText("Time: 0.0");
+        timeText.setText("Tiempo: 0.0");
         timeText.setLocalTranslation(10, settings.getHeight() - timeText.getLineHeight(), 0);
         guiNode.attachChild(timeText);
     }
@@ -225,6 +226,9 @@ public class Juego extends SimpleApplication {
         inputManager.addMapping("pull", new MouseButtonTrigger(MouseInput.BUTTON_RIGHT));
         inputManager.addMapping("shoot", new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
         
+        inputManager.addMapping("RotateLeft", new MouseAxisTrigger(MouseInput.AXIS_X, true));
+        inputManager.addMapping("RotateRight", new MouseAxisTrigger(MouseInput.AXIS_X, false));
+        
         AnalogListener handlerAnalog = new AnalogListener(){
             @Override
             public void onAnalog(String name, float value, float tpf) {
@@ -241,6 +245,12 @@ public class Juego extends SimpleApplication {
                 }
                 if (name.equals("WalkLeft")) {
                     player.getPlayerNode().move(camLeft.mult(5 * tpf));
+                }
+                if (name.equals("RotateLeft")) {
+                    player.getPlayerNode().rotate(0, value, 0); // Rotar alrededor del eje Y
+                }
+                if (name.equals("RotateRight")) {
+                    player.getPlayerNode().rotate(0, -value, 0); // Rotar alrededor del eje Y
                 }
             }
         };
@@ -265,7 +275,8 @@ public class Juego extends SimpleApplication {
             }
         };
         
-        inputManager.addListener(handlerAnalog, "Walk", "WalkLeft", "WalkRight", "WalkBackward", "pull", "shoot");
+        inputManager.addListener(handlerAnalog, "Walk", "WalkLeft", "WalkRight", "WalkBackward", "pull", 
+                "shoot", "RotateLeft", "RotateRight");
         inputManager.addListener(handler, "Walk", "WalkLeft", "WalkRight", "WalkBackward", "pull", "shoot");
     }
     
