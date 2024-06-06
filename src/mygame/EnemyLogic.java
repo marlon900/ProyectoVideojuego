@@ -4,8 +4,10 @@
  */
 package mygame;
 
+import com.jme3.anim.AnimClip;
 import com.jme3.anim.AnimComposer;
 import com.jme3.math.Vector3f;
+import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 
 /**
@@ -19,6 +21,10 @@ public class EnemyLogic {
     private int health;
     private PlayerLogic player;
     private boolean isAttacking;
+    private Geometry healthBar;
+    private float attackCooldown = 2f;
+    private float attackTimer = 2f;
+    private boolean die = false;
 
     public EnemyLogic(Node enemyNode, AnimComposer animComposer, Vector3f target, int health, PlayerLogic player) {
         this.enemyNode = enemyNode;
@@ -41,16 +47,22 @@ public class EnemyLogic {
 
         // Verificar la distancia al jugador para activar la animación de ataque
         float distanceToPlayer = enemyNode.getLocalTranslation().distance(playerPosition);
-        if (distanceToPlayer < 5 && !isAttacking) {
-            // Activar la animación de ataque si el enemigo está lo suficientemente cerca
+        
+        // Reducir el temporizador de enfriamiento
+        if (attackTimer > 0) {
+            attackTimer -= tpf;
+        }
+
+        // Activar la animación de ataque si el enemigo está lo suficientemente cerca y el temporizador de enfriamiento ha terminado
+        if (distanceToPlayer < 5 && !isAttacking && attackTimer <= 0) {
             animComposer.setCurrentAction("SliceVertical");
             isAttacking = true;
         }
 
-        // Si está atacando y se alcanza al jugador, causar daño
         if (isAttacking && distanceToPlayer < 2) {
-            // Llama al método die() del jugador cuando el enemigo está lo suficientemente cerca
-            player.die();
+            player.takeDamage(10);
+            attackTimer = attackCooldown;
+            isAttacking = false;
         }
     }
 
@@ -60,6 +72,9 @@ public class EnemyLogic {
             // Lógica cuando el enemigo muere
             animComposer.setCurrentAction("StandUpBack");
             enemyNode.removeFromParent();
+            die = true;
+        }else{
+            updateHealthBar();
         }
     }
 
@@ -69,5 +84,20 @@ public class EnemyLogic {
 
     public void setHealth(int health) {
         this.health = health;
+    }
+    
+    public void setHealthBar(Geometry healthBar) {
+        this.healthBar = healthBar;
+    }
+    
+    private void updateHealthBar() {
+        if (healthBar != null) {
+            float healthPercentage = (float) health / 100f;
+            healthBar.setLocalScale(healthPercentage, 1, 1);
+        }
+    }
+
+    public boolean isDie() {
+        return die;
     }
 }

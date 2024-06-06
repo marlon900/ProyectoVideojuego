@@ -17,13 +17,15 @@ public class PlayerLogic {
     private AnimComposer animComposer;
     private boolean isWalking = false;
     private int health;
-    private GameManager gameManager; // Referencia al GameManager
+    private int maxHealth;
+    private boolean die;
 
-    public PlayerLogic(Node playerNode, AnimComposer animComposer, int health, GameManager gameManager) {
+    public PlayerLogic(Node playerNode, AnimComposer animComposer, int health) {
         this.playerNode = playerNode;
         this.animComposer = animComposer;
         this.health = health;
-        this.gameManager = gameManager;
+        this.maxHealth = health;
+        this.die = false;
     }
 
     public void handleWalkAction(boolean keyPressed) {
@@ -58,14 +60,17 @@ public class PlayerLogic {
 
     public void takeDamage(int damage) {
         health -= damage;
+        System.out.println(health);
         if (health <= 0) {
-            die();
+            die = true;
         }
     }
+    
+    public int getMaxHealth() {
+        return maxHealth;
+    }
 
-    public void die() {
-        health = 0;
-        playerNode.removeFromParent();
-        gameManager.showGameOver(); // Notifica al GameManager que el juego ha terminado
+    public boolean isDie() {
+        return die;
     }
 }

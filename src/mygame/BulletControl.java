@@ -42,6 +42,9 @@ public class BulletControl extends AbstractControl {
                     System.out.println("Hit!");
                     spatial.removeFromParent();
                     enemy.takeDamage(10);
+                    if(enemy.isDie()){
+                        enemies.remove(enemy);
+                    }
                     break;
                 }
             }

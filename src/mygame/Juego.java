@@ -17,14 +17,14 @@ import com.jme3.light.PointLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
-import com.jme3.post.FilterPostProcessor;
 import com.jme3.scene.CameraNode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
+import com.jme3.scene.control.BillboardControl;
 import com.jme3.scene.control.CameraControl;
-import com.jme3.scene.control.CameraControl.ControlDirection;
 import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.Quad;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.system.AppSettings;
 import java.util.ArrayList;
@@ -41,6 +41,13 @@ public class Juego extends SimpleApplication {
     private float enemySpawnInterval = 30;
     private int difficulty;
     private static final Box mesh = new Box(0.8f, 0.8f, 0.8f);
+    private Geometry healthBarBackground;
+    private Geometry healthBar;
+    private int oleada;
+    private BitmapText victoryText;
+    private BitmapText gameOverText;
+    private float gameOverTimer = -1;
+    private boolean gameOver = false;
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true); //Creamos el objeto para controlar las especificaciones
@@ -103,8 +110,7 @@ public class Juego extends SimpleApplication {
         // Inicializar la lógica del jugador
         AnimComposer animComposer = playerNode.getControl(AnimComposer.class);
         animComposer.setCurrentAction("stand");
-        GameManager gameManager = new GameManager();  // Debes crear una instancia de GameManager según tu implementación
-        player = new PlayerLogic(playerNode, animComposer, 50, gameManager);
+        player = new PlayerLogic(playerNode, animComposer, 100);
         
         // Desactivamos la camara voladora
         flyCam.setEnabled(false);
@@ -127,7 +133,14 @@ public class Juego extends SimpleApplication {
         initTimeDisplay();
         initKeys();
         spawnEnemies();
+        oleada = 1;
         difficulty = 1;//Establecemos la dificultad incial en 1
+        
+        initHealthBar();
+        
+        // Iniciar textos de victoria o derrota
+        initVictoryText();
+        initGameOverText();
     }
   
     /**
@@ -138,10 +151,11 @@ public class Juego extends SimpleApplication {
         // Actualizar el tiempo de la partida
         gameTime += tpf;
         // Actualizar el texto en pantalla
-        timeText.setText(String.format("Time: %.1f", gameTime));
+        timeText.setText(String.format("Tiempo: %.1f", gameTime));
         
         enemySpawnTime += tpf;
-        if (enemySpawnTime >= enemySpawnInterval) {
+        if (enemySpawnTime >= enemySpawnInterval && oleada <= 7) {
+            oleada += 1;
             difficulty += 1;
             spawnEnemies();
             enemySpawnTime = 0; // Reiniciar el contador
@@ -154,8 +168,62 @@ public class Juego extends SimpleApplication {
         }
         
         attachLight();
-        
         inputManager.setCursorVisible(false);
+        updateHealthBar();
+        
+        if(oleada == 7 && gameTime >= 180 && !gameOver && enemies.isEmpty()){
+            showVictoryText();
+            gameOverTimer = 5;
+            gameOver = true;
+        }
+        
+        // Verificar si el jugador ha muerto
+        if (player.isDie() && !gameOver) {
+            showGameOverText();
+            gameOver = true;
+            gameOverTimer = 5;
+        }
+
+        // Contar el tiempo para cerrar la aplicación
+        if (gameOverTimer >= 0) {
+            
+            gameOverTimer -= tpf;
+            if (gameOverTimer <= 0) {
+                System.exit(1);
+            }
+        }
+    }
+    
+    private void initVictoryText() {
+        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+        victoryText = new BitmapText(guiFont, false);
+        victoryText.setSize(guiFont.getCharSet().getRenderedSize() * 2);
+        victoryText.setText("¡Victoria!");
+        victoryText.setLocalTranslation(
+                (settings.getWidth() - victoryText.getLineWidth()) / 2,
+                (settings.getHeight() + victoryText.getLineHeight()) / 2,
+                0);
+        victoryText.setColor(ColorRGBA.Green);
+    }
+
+    private void showVictoryText() {
+        guiNode.attachChild(victoryText);
+    }
+    
+    private void initGameOverText() {
+        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+        gameOverText = new BitmapText(guiFont, false);
+        gameOverText.setSize(guiFont.getCharSet().getRenderedSize() * 2);
+        gameOverText.setText("¡Derrota!");
+        gameOverText.setLocalTranslation(
+                (settings.getWidth() - gameOverText.getLineWidth()) / 2,
+                (settings.getHeight() + gameOverText.getLineHeight()) / 2,
+                0);
+        gameOverText.setColor(ColorRGBA.Red);
+    }
+
+    private void showGameOverText() {
+        guiNode.attachChild(gameOverText);
     }
     
     private void attachLight(){
@@ -211,7 +279,10 @@ public class Juego extends SimpleApplication {
                 // Inicializar la lógica del enemigo
                 EnemyLogic enemy = new EnemyLogic(enemyNode, animComposer, 
                         player.getPlayerNode().getLocalTranslation(), (10 * difficulty), player);
-                    enemies.add(enemy);
+                enemies.add(enemy);
+                
+                //Agregar la barra de vida al enemigo
+                addHealthBarToEnemy(enemyNode, enemy);
             }
         }
     }
@@ -239,16 +310,16 @@ public class Juego extends SimpleApplication {
                 Vector3f camDirection = cam.getDirection().multLocal(1, 0, 1).normalizeLocal();
                 Vector3f camLeft = cam.getLeft().multLocal(1, 0, 1).normalizeLocal();
                 if (name.equals("Walk")) {
-                    player.getPlayerNode().move(camDirection.mult(5 * tpf));
+                    player.getPlayerNode().move(camDirection.mult(7 * tpf));
                 }
                 if (name.equals("WalkBackward")) {
-                    player.getPlayerNode().move(camDirection.negate().mult(5 * tpf));
+                    player.getPlayerNode().move(camDirection.negate().mult(7 * tpf));
                 }
                 if (name.equals("WalkRight")) {
-                    player.getPlayerNode().move(camLeft.mult(-5 * tpf));
+                    player.getPlayerNode().move(camLeft.mult(-7 * tpf));
                 }
                 if (name.equals("WalkLeft")) {
-                    player.getPlayerNode().move(camLeft.mult(5 * tpf));
+                    player.getPlayerNode().move(camLeft.mult(7 * tpf));
                 }
                 if (name.equals("RotateLeft")) {
                     player.getPlayerNode().rotate(0, value, 0); // Rotar alrededor del eje Y
@@ -309,5 +380,65 @@ public class Juego extends SimpleApplication {
         bulletMat.setColor("Color", ColorRGBA.LightGray);
         bullet.setMaterial(bulletMat);
         return bullet;
+    }
+    
+    private void initHealthBar() {
+
+        // Barra de vida
+        Quad healthQuad = new Quad(settings.getWidth() / 2, 10);
+        healthBar = new Geometry("HealthBar", healthQuad);
+        Material healthMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        healthMat.setColor("Color", ColorRGBA.Green);
+        healthBar.setMaterial(healthMat);
+        healthBar.setLocalTranslation(settings.getWidth() / 4, settings.getHeight() - 20, 0);
+        guiNode.attachChild(healthBar);
+
+        // Contorno de la barra de vida
+        Quad borderQuad = new Quad((settings.getWidth() / 2) + 4, 14);
+        Geometry healthBarBorder = new Geometry("HealthBarBorder", borderQuad);
+        Material borderMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        borderMat.setColor("Color", ColorRGBA.Gray);  // Color del borde
+        healthBarBorder.setMaterial(borderMat);
+        healthBarBorder.setLocalTranslation((settings.getWidth() / 4) - 2, (settings.getHeight() - 20) - 2, -1);
+        guiNode.attachChild(healthBarBorder);
+    }
+
+    private void updateHealthBar() {
+        float healthPercentage = (float) player.getHealth() / player.getMaxHealth();
+        float newWidth = (settings.getWidth() / 2) * healthPercentage;
+
+        healthBar.setLocalScale(newWidth / (settings.getWidth() / 2), 1, 1);
+    }
+
+    // Método para crear la geometría de la barra de vida
+    private Geometry createHealthBarGeometry() {
+        Quad healthQuad = new Quad(2, 0.4f);
+        Geometry enemyHealthBar = new Geometry("HealthBar", healthQuad);
+        Material healthMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        healthMat.setColor("Color", ColorRGBA.Red);
+        enemyHealthBar.setMaterial(healthMat);
+        return enemyHealthBar;
+    }
+
+// Añadir barra de vida al enemigo
+    public void addHealthBarToEnemy(Node enemyNode, EnemyLogic enemy) {
+        // Crear la barra de vida
+        Geometry enemyHealthBar = createHealthBarGeometry();
+        enemyHealthBar.setLocalTranslation(-1, 4.5f, 0);  // Posición relativa al enemigo
+
+        // Crear el nodo que contendrá la barra de vida
+        Node healthBarNode = new Node("HealthBarNode");
+        healthBarNode.attachChild(enemyHealthBar);
+
+        // Añadir el control de cartel (billboard) al nodo de la barra de vida
+        BillboardControl billboardControl = new BillboardControl();
+        billboardControl.setAlignment(BillboardControl.Alignment.Screen);  // Alineación para que siempre mire hacia la pantalla
+        healthBarNode.addControl(billboardControl);
+
+        // Añadir el nodo de la barra de vida al nodo del enemigo
+        enemyNode.attachChild(healthBarNode);
+
+        // Vincular la barra de vida con la lógica del enemigo para poder actualizarla
+        enemy.setHealthBar(enemyHealthBar);
     }
 }
