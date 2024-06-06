@@ -17,12 +17,16 @@ public class EnemyLogic {
     private AnimComposer animComposer;
     private Vector3f target;
     private int health;
+    private PlayerLogic player;
+    private boolean isAttacking;
 
-    public EnemyLogic(Node enemyNode, AnimComposer animComposer, Vector3f target, int health) {
+    public EnemyLogic(Node enemyNode, AnimComposer animComposer, Vector3f target, int health, PlayerLogic player) {
         this.enemyNode = enemyNode;
         this.animComposer = animComposer;
         this.target = target;
         this.health = health;
+        this.player = player;
+        this.isAttacking = false;
     }
 
     public Node getEnemyNode() {
@@ -34,8 +38,22 @@ public class EnemyLogic {
         enemyNode.lookAt(playerPosition, Vector3f.UNIT_Y);
         Vector3f direction = target.subtract(enemyNode.getLocalTranslation()).normalize();
         enemyNode.move(direction.mult(tpf)); // Ajusta la velocidad según sea necesario
+
+        // Verificar la distancia al jugador para activar la animación de ataque
+        float distanceToPlayer = enemyNode.getLocalTranslation().distance(playerPosition);
+        if (distanceToPlayer < 5 && !isAttacking) {
+            // Activar la animación de ataque si el enemigo está lo suficientemente cerca
+            animComposer.setCurrentAction("SliceVertical");
+            isAttacking = true;
+        }
+
+        // Si está atacando y se alcanza al jugador, causar daño
+        if (isAttacking && distanceToPlayer < 2) {
+            // Llama al método die() del jugador cuando el enemigo está lo suficientemente cerca
+            player.die();
+        }
     }
-    
+
     public void takeDamage(int damage) {
         health -= damage;
         if (health <= 0) {

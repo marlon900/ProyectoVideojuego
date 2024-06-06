@@ -17,11 +17,13 @@ public class PlayerLogic {
     private AnimComposer animComposer;
     private boolean isWalking = false;
     private int health;
+    private GameManager gameManager; // Referencia al GameManager
 
-    public PlayerLogic(Node playerNode, AnimComposer animComposer, int health) {
+    public PlayerLogic(Node playerNode, AnimComposer animComposer, int health, GameManager gameManager) {
         this.playerNode = playerNode;
         this.animComposer = animComposer;
         this.health = health;
+        this.gameManager = gameManager;
     }
 
     public void handleWalkAction(boolean keyPressed) {
@@ -34,7 +36,7 @@ public class PlayerLogic {
     
     public void handlePullAction(boolean keyPressed) {
         if(keyPressed){
-            animComposer.setCurrentAction("pull", DEFAULT_LAYER, false);
+            animComposer.setCurrentAction("pull", AnimComposer.DEFAULT_LAYER, false);
         }
     }
 
@@ -54,7 +56,16 @@ public class PlayerLogic {
         return health;
     }
 
-    public void setHealth(int health) {
-        this.health = health;
+    public void takeDamage(int damage) {
+        health -= damage;
+        if (health <= 0) {
+            die();
+        }
+    }
+
+    public void die() {
+        health = 0;
+        playerNode.removeFromParent();
+        gameManager.showGameOver(); // Notifica al GameManager que el juego ha terminado
     }
 }

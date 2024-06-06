@@ -101,7 +101,10 @@ public class Juego extends SimpleApplication {
         // Crear una máscara de animación vacía
         control.setCurrentAction("stand");
         // Inicializar la lógica del jugador
-        player = new PlayerLogic(playerNode, control, 100);
+        AnimComposer animComposer = playerNode.getControl(AnimComposer.class);
+        animComposer.setCurrentAction("stand");
+        GameManager gameManager = new GameManager();  // Debes crear una instancia de GameManager según tu implementación
+        player = new PlayerLogic(playerNode, animComposer, 50, gameManager);
         
         // Desactivamos la camara voladora
         flyCam.setEnabled(false);
@@ -207,11 +210,12 @@ public class Juego extends SimpleApplication {
 
                 // Inicializar la lógica del enemigo
                 EnemyLogic enemy = new EnemyLogic(enemyNode, animComposer, 
-                        player.getPlayerNode().getLocalTranslation(), (10*difficulty));
-                enemies.add(enemy);
+                        player.getPlayerNode().getLocalTranslation(), (10 * difficulty), player);
+                    enemies.add(enemy);
             }
         }
     }
+
 
   /**
    * Mapear las teclas a la acción de entrada "Walk",
