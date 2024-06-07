@@ -4,6 +4,8 @@ import com.jme3.anim.AnimComposer;
 import com.jme3.anim.Joint;
 import com.jme3.anim.SkinningControl;
 import com.jme3.app.SimpleApplication;
+import com.jme3.audio.AudioData.DataType;
+import com.jme3.audio.AudioNode;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
@@ -48,12 +50,17 @@ public class Juego extends SimpleApplication {
     private BitmapText gameOverText;
     private float gameOverTimer = -1;
     private boolean gameOver = false;
+    
+    // Añadir los nodos de audio
+    private AudioNode backgroundMusic;
+    private AudioNode enemyMoveSound;
+    private AudioNode enemyHitSound;
 
     public static void main(String[] args) {
         AppSettings settings = new AppSettings(true); //Creamos el objeto para controlar las especificaciones
         settings.setTitle("El Despertar del Héroe"); //Cambiamos el nombre de la ventana 
         //Integramos una imagen personal a la pantalla de inicio
-        settings.setSettingsDialogImage("Logos/Portada.png");
+        settings.setSettingsDialogImage("Logos/Portada_m.png");
         //modificar la resolucion 
         settings.setFullscreen(true);
         settings.setResolution(1024, 720);
@@ -141,6 +148,23 @@ public class Juego extends SimpleApplication {
         // Iniciar textos de victoria o derrota
         initVictoryText();
         initGameOverText();
+        
+        // Inicializar música de fondo
+        backgroundMusic = new AudioNode(assetManager, "Music/dung.wav", DataType.Stream);
+        backgroundMusic.setPositional(false);
+        backgroundMusic.setLooping(true);
+        backgroundMusic.setVolume(3);
+        rootNode.attachChild(backgroundMusic);
+        backgroundMusic.play();
+
+        // Inicializar efectos de sonido de enemigos
+        enemyMoveSound = new AudioNode(assetManager, "Sounds/orco.wav", DataType.Buffer);
+        enemyMoveSound.setPositional(false);
+        rootNode.attachChild(enemyMoveSound);
+
+        enemyHitSound = new AudioNode(assetManager, "Sounds/daño.wav", DataType.Buffer);
+        enemyHitSound.setPositional(false);
+        rootNode.attachChild(enemyHitSound);
     }
   
     /**
