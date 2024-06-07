@@ -6,7 +6,6 @@ package mygame;
 
 import com.jme3.anim.AnimClip;
 import com.jme3.anim.AnimComposer;
-import com.jme3.audio.AudioNode;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
@@ -26,17 +25,14 @@ public class EnemyLogic {
     private float attackCooldown = 2f;
     private float attackTimer = 2f;
     private boolean die = false;
-    // Declarar el nodo de audio para el sonido de daño
-    private AudioNode damageSound;
 
-    public EnemyLogic(Node enemyNode, AnimComposer animComposer, Vector3f target, int health, PlayerLogic player, AudioNode damageSound) {
+    public EnemyLogic(Node enemyNode, AnimComposer animComposer, Vector3f target, int health, PlayerLogic player) {
         this.enemyNode = enemyNode;
         this.animComposer = animComposer;
         this.target = target;
         this.health = health;
         this.player = player;
         this.isAttacking = false;
-        this.damageSound = damageSound;
     }
 
     public Node getEnemyNode() {
@@ -71,17 +67,14 @@ public class EnemyLogic {
     }
 
     public void takeDamage(int damage) {
-        // Reducir la salud y actualizar la barra de salud
+        health -= damage;
         if (health <= 0) {
             // Lógica cuando el enemigo muere
+            animComposer.setCurrentAction("StandUpBack");
             enemyNode.removeFromParent();
             die = true;
-        } else {
+        }else{
             updateHealthBar();
-            // Reproducir el sonido de daño
-            if (damageSound != null) {
-                damageSound.playInstance();
-            }
         }
     }
 

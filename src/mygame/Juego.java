@@ -83,7 +83,7 @@ public class Juego extends SimpleApplication {
         FogFilter fog=new FogFilter();
         fog.setFogColor(new ColorRGBA(0.9f, 0.9f, 0.9f, 1.0f));
         fog.setFogDistance(155);
-        fog.setFogDensity(0.9f);
+        fog.setFogDensity(0.8f);
         fpp.addFilter(fog);
         viewPort.addProcessor(fpp);
 
@@ -112,7 +112,6 @@ public class Juego extends SimpleApplication {
         // Obtener el SkinningControl
         SkinningControl skinningControl = playerNode.getControl(SkinningControl.class);
         
-        ((Node)rootNode.getChild("terreno")).attachChild(playerNode);
         // Cargar el modelo del arma
         Node weaponNode = (Node) assetManager.loadModel("Models/shotgun/shotgun.j3o");
         // Encontrar el hueso de la mano derecha
@@ -313,11 +312,9 @@ public class Juego extends SimpleApplication {
                 animComposer.setCurrentAction("RunBase");
 
                 // Inicializar la lógica del enemigo
-                EnemyLogic enemy = new EnemyLogic(enemyNode, animComposer,
-                        player.getPlayerNode().getLocalTranslation(), (10 * difficulty), player, enemyHitSound);
+                EnemyLogic enemy = new EnemyLogic(enemyNode, animComposer, 
+                        player.getPlayerNode().getLocalTranslation(), (10 * difficulty), player);
                 enemies.add(enemy);
-                
-                
                 
                 //Agregar la barra de vida al enemigo
                 addHealthBarToEnemy(enemyNode, enemy);
