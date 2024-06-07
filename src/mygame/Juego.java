@@ -199,7 +199,7 @@ public class Juego extends SimpleApplication {
         for (EnemyLogic enemy : enemies) {
             // Cálculo de la dirección hacia el jugador
             Vector3f playerPosition = player.getPlayerNode().getLocalTranslation();
-            enemy.update(4 * tpf, playerPosition);
+            enemy.update((4+difficulty) * tpf, playerPosition);
         }
         
         attachLight();
@@ -409,7 +409,7 @@ public class Juego extends SimpleApplication {
     }
 
     private Geometry createBullet() {
-        Sphere bulletMesh = new Sphere(10, 10, 0.1f);
+        Sphere bulletMesh = new Sphere(15, 15, 0.2f);
         Geometry bullet = new Geometry("Bullet", bulletMesh);
         Material bulletMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         bulletMat.setColor("Color", ColorRGBA.LightGray);
