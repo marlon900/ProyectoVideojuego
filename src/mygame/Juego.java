@@ -19,6 +19,8 @@ import com.jme3.light.PointLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
+import com.jme3.post.FilterPostProcessor;
+import com.jme3.post.filters.FogFilter;
 import com.jme3.scene.CameraNode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
@@ -76,6 +78,15 @@ public class Juego extends SimpleApplication {
         setDisplayStatView(false);//Dejamos de mostrar información
         setDisplayFps(false);//Quitamos el numero de fps
         
+         /** Add fog to a scene */
+        FilterPostProcessor fpp=new FilterPostProcessor(assetManager);
+        FogFilter fog=new FogFilter();
+        fog.setFogColor(new ColorRGBA(0.9f, 0.9f, 0.9f, 1.0f));
+        fog.setFogDistance(155);
+        fog.setFogDensity(2.0f);
+        fpp.addFilter(fog);
+        viewPort.addProcessor(fpp);
+
         // Cargar el terreno
         Spatial primaryScene = assetManager.loadModel("Scenes/terreno.j3o");
         primaryScene.setLocalTranslation(0, -5, 0);
